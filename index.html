@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+</head>
+<body>
+<div id="result"></div>
+<script>
+
+    var testArray = [];
+    var resultString = "";
+    var resultDiv = document.getElementById("result");
+    var imageArray = ["img/test1.jpg","img/test2.jpg","img/test3.jpg","img/test4.jpg","img/test5.jpg"];
+    var imageBinArray = [];
+
+
+    for(var n = 0; n < 5; n++){
+        convertImageToBinary(imageArray[n],n,function(bin,num){
+            var obj = {
+                type:num,
+                msg: new Blob([bin], {type : 'image/jpeg'})
+            }
+            imageBinArray.push(obj);
+            if(num == 4)getImages();
+        })
+    }
+
+    function getImages(){
+        var length = imageBinArray.length;
+
+        for(var i = 0; i < length; i++){
+            // Call our parse() function and pass it a message and a token
+            // In our callback we will be able to retrieve the token
+            parse(/* file */ imageBinArray[i].msg, /* token */ imageBinArray[i].type, function(buffer,token){
+
+                // We can retrieve are token value here
+                // directly from the callback function
+                resultString = resultString + "Result = " +
+                        encodeURI(buffer) + ",<img height='30px' width='30px' src=' " + buffer + "'/>, token = " + token + "<br>";
+                resultDiv.innerHTML = resultString;
+            })
+        }
+    }
+
+    function parse(blob,token,callback){
+
+        // Always create a new instance of FileReader every time.
+        var reader = new FileReader();
+
+        // Attach the token as a property to the FileReader Object.
+        reader.token = token;
+
+        reader.onerror = function (event) {
+            console.error(new Error(event.target.error.code).stack);
+        }
+
+        reader.onloadend = function (evt) {
+            if(this.token != undefined){
+
+                // The reader operation is complete.
+                // Now we can retrieve the unique token associated
+                // with this instance of FileReader.
+                callback(this.result,this.token);
+            }
+        };
+        reader.readAsBinaryString(blob);
+    }
+
+    function convertImageToBinary(src,num,callback){
+        var canvas = document.createElement("canvas");
+        canvas.num = num;
+        var ctx = canvas.getContext("2d");
+        var img = new Image();
+        img.onload = function () {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            var data = canvas.toDataURL("image/jpeg");
+            callback(data,canvas.num);
+        };
+        img.src = src;
+    }
+</script>
+</body>
+</html>
